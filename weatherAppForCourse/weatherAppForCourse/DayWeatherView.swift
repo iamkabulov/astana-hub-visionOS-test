@@ -88,6 +88,32 @@ final class DayWeatherView: UITableViewCell {
 	required init?(coder: NSCoder) {
 		fatalError("init(coder:) has not been implemented")
 	}
+
+	func configure(temprature: String, weekDay: String, weather: Int) {
+		tempratureLabel.text = "\(temprature)℃"
+		dayLabel.text = weekDay
+		weatherLabel.text = self.weather(weatherName: weather)
+		weatherImage.image = UIImage(named: self.weather(weatherName: weather))
+	}
+
+	func weather(weatherName: Int) -> String {
+		switch weatherName {
+			case 200...232:
+				return "Cloudy"
+			case 300...321:
+				return "Rainy"
+			case 500...531:
+				return "Fog"
+			case 600...622:
+				return "Snow"
+			case 701...781:
+				return "Rainbow"
+			case 800...804:
+				return "Sunny"
+			default:
+				return "Error"
+		}
+	}
 }
 
 //MARK: - SectionCell

@@ -9,6 +9,8 @@ import UIKit
 
 class WeatherViewController: UIViewController {
 
+	private var weatherData: WeatherModel?
+	private var weatherFor7Days: Weather7s?
 	lazy var tableView: UITableView = {
 		let view = UITableView()
 		view.translatesAutoresizingMaskIntoConstraints = false
@@ -19,12 +21,23 @@ class WeatherViewController: UIViewController {
 		view.dataSource = self
 		return view
 	}()
+	
 	override func viewDidLoad() {
 		super.viewDidLoad()
 		view.backgroundColor = .systemBackground
 		title = "Astana"
 		navigationController?.navigationBar.prefersLargeTitles = true
 		setUp()
+		let net = Networking()
+		net.fetchWeather() { data in
+			self.title = data.cityName
+			self.weatherData = data
+			self.tableView.reloadData()
+		}
+		net.fetchWeatherFor7Days { datas in
+			self.weatherFor7Days = datas
+			self.tableView.reloadData()
+		}
 		// Do any additional setup after loading the view.
 	}
 
@@ -36,6 +49,23 @@ class WeatherViewController: UIViewController {
 			tableView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
 			tableView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
 		])
+	}
+
+	func getWeekDays(_ index: Int) -> String {
+		let date = Date()
+		let calendar = Calendar.current
+
+		if let futureDate = calendar.date(byAdding: .day, value: index + 1, to: date) {
+			let weekday = calendar.component(.weekday, from: futureDate)
+			print("Числовое представление дня недели через 6 дней: \(weekday)")
+
+			let dateFormatter = DateFormatter()
+			dateFormatter.dateFormat = "EEEE"
+			let weekdayName = dateFormatter.string(from: futureDate)
+			return weekdayName
+		} else {
+			return "Monday"
+		}
 	}
 }
 
@@ -80,7 +110,17 @@ extension WeatherViewController: UITableViewDelegate, UITableViewDataSource {
 
 	func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
 		guard let cell = tableView.dequeueReusableCell(withIdentifier: DayWeatherView.identifier, for: indexPath) as? DayWeatherView else { return UITableViewCell() }
-
+		if indexPath.section == 0 && indexPath.row == 0 {
+			cell.configure(temprature: weatherData?.tempString ?? "0",
+							weekDay: "Today",
+						   weather: weatherData?.id ?? 0)
+		} else {
+			guard let data = weatherFor7Days?.list[indexPath.row + 8] else { return cell }
+			let celcius = data.main.temp - 273.15
+			cell.configure(temprature: "\(Int(celcius))",
+						   weekDay: getWeekDays(indexPath.row),
+						   weather: data.weather[0].id)
+		}
 		return cell
 	}
 	
